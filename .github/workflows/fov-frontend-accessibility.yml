@@ -2,7 +2,6 @@ name: FOV Frontend Accessibility
 
 on:
   push:
-
   pull_request:
     branches:
       - dev
@@ -12,7 +11,8 @@ jobs:
   accessibility:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout Code
+        uses: actions/checkout@v7
 
       - name: be-a11y Accessibility Checker
         id: a11y
@@ -22,15 +22,15 @@ jobs:
           url: https://fovapp.live
           report: a11y-report.json
 
-      - name: Use the outputs
+      - name: Parse and Use the outputs
         run: |
-          echo "total=${{ steps.a11y.outputs.total }}"
-          echo "errors=${{ steps.a11y.outputs.errors }}"
-          echo "warnings=${{ steps.a11y.outputs.warnings }}"
-          echo "report=${{ steps.a11y.outputs.report-path }}"
+          echo "Extraction des résultats du rapport..."
+          TOTAL_ISSUES=$(jq '. | length' a11y-report.json 2>/dev/null || echo "0")
+          echo "total=$TOTAL_ISSUES"
+          echo "report=a11y-report.json"
 
       - name: Upload report
-        if: ${{ github.event.inputs.report != '' }}
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: accessibility-report
