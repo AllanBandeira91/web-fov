@@ -1,10 +1,23 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Inject, Injectable, InjectionToken, OnDestroy } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
+// socket.io-client is a real dependency (see package.json); typings come from the package.
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 import * as API from '../models/APIModels'
+
+/**
+ * Factory used to create a Socket.IO client.
+ * Exposed as a DI token so tests can inject a mock socket instead of
+ * hitting the real network / trying to patch the ESM namespace.
+ */
+export type SocketFactory = (url: string, opts?: Record<string, unknown>) => Socket;
+
+export const SOCKET_FACTORY = new InjectionToken<SocketFactory>('SOCKET_FACTORY', {
+  providedIn: 'root',
+  factory: () => (url: string, opts?: Record<string, unknown>) => io(url, opts),
+});
 
 @Injectable({
   providedIn: 'root',
@@ -27,6 +40,7 @@ export class ChatService implements OnDestroy {
   constructor(
     private http: HttpClient,
     private authService: AuthService,
+    @Inject(SOCKET_FACTORY) private socketFactory: SocketFactory,
   ) {}
 
   ngOnDestroy(): void {
@@ -58,7 +72,7 @@ export class ChatService implements OnDestroy {
     // Chat is ephemeral: start empty, only messages sent while connected are shown.
     this.messagesSubject.next([]);
 
-    this.socket = io(this.socketBaseUrl(), {
+    this.socket = this.socketFactory(this.socketBaseUrl(), {
       transports: ['websocket', 'polling'],
     });
 
