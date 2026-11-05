@@ -10,6 +10,16 @@ on:
 jobs:
   accessibility:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        page:
+          - { name: "home", url: "https://fovapp.live" }
+          - { name: "login", url: "https://fovapp.live/login" }
+          - { name: "followed", url: "https://fovapp.live/followed" }
+          - { name: "discover", url: "https://fovapp.live/discover" }
+          - { name: "how-does-it-work", url: "https://fovapp.live/how-does-it-work" }
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -19,26 +29,29 @@ jobs:
         continue-on-error: true
         uses: be-lenka/be-a11y@v2.2.9
         with:
-          url: https://fovapp.live
-          report: a11y-report.json
+          url: ${{ matrix.page.url }}
+          report: a11y-report-${{ matrix.page.name }}.json
 
       - name: Parse and Print GitHub Notices
         run: |
-          echo "Extraction et création des notices GitHub..."
-          if [ -f a11y-report.json ]; then
-            jq -c '.[]' a11y-report.json | while read -r item; do
+          REPORT_FILE="a11y-report-${{ matrix.page.name }}.json"
+          echo "Extraction et création des notices GitHub pour la page [${{ matrix.page.name }}]..."
+
+          if [ -f "$REPORT_FILE" ]; then
+            jq -c '.[]' "$REPORT_FILE" | while read -r item; do
               type=$(echo "$item" | jq -r '.type')
               message=$(echo "$item" | jq -r '.message')
               line=$(echo "$item" | jq -r '.line')
-              echo "::warning line=$line,title=Accessibility ($type)::$message"
+
+              echo "::notice line=$line,title=Accessibility (${{ matrix.page.name }} - $type)::$message"
             done
           else
-            echo "Aucun rapport généré."
+            echo "Aucun rapport généré pour ${{ matrix.page.name }}."
           fi
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: accessibility-report
-          path: a11y-report.json
+          name: accessibility-report-${{ matrix.page.name }}
+          path: a11y-report-${{ matrix.page.name }}.json
