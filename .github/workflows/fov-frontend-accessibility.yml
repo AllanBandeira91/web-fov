@@ -7,6 +7,9 @@ on:
       - dev
       - master
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   accessibility:
     runs-on: ubuntu-latest
@@ -35,7 +38,7 @@ jobs:
       - name: Parse and Print GitHub Notices
         run: |
           REPORT_FILE="a11y-report-${{ matrix.page.name }}.json"
-          echo "Extraction et création des notices GitHub pour la page [${{ matrix.page.name }}]..."
+          echo "Extraction et classification des alertes pour [${{ matrix.page.name }}]..."
 
           if [ -f "$REPORT_FILE" ]; then
             jq -c '.[]' "$REPORT_FILE" | while read -r item; do
@@ -43,7 +46,13 @@ jobs:
               message=$(echo "$item" | jq -r '.message')
               line=$(echo "$item" | jq -r '.line')
 
-              echo "::notice line=$line,title=Accessibility (${{ matrix.page.name }} - $type)::$message"
+              if [[ "$type" == "aria-role-invalid" || "$type" == "missing-landmark" ]]; then
+                LEVEL="error"   # S'affichera en ROUGE vif sur GitHub
+              else
+                LEVEL="warning" # S'affichera en JAUNE pour les alertes mineures
+              fi
+
+              echo "::$LEVEL line=$line,title=Accessibility (${{ matrix.page.name }} - $type)::$message"
             done
           else
             echo "Aucun rapport généré pour ${{ matrix.page.name }}."
@@ -51,7 +60,7 @@ jobs:
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: accessibility-report-${{ matrix.page.name }}
           path: a11y-report-${{ matrix.page.name }}.json
