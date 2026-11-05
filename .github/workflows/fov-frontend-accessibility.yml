@@ -22,12 +22,19 @@ jobs:
           url: https://fovapp.live
           report: a11y-report.json
 
-      - name: Parse and Use the outputs
+      - name: Parse and Print GitHub Notices
         run: |
-          echo "Extraction des résultats du rapport..."
-          TOTAL_ISSUES=$(jq '. | length' a11y-report.json 2>/dev/null || echo "0")
-          echo "total=$TOTAL_ISSUES"
-          echo "report=a11y-report.json"
+          echo "Extraction et création des notices GitHub..."
+          if [ -f a11y-report.json ]; then
+            jq -c '.[]' a11y-report.json | while read -r item; do
+              type=$(echo "$item" | jq -r '.type')
+              message=$(echo "$item" | jq -r '.message')
+              line=$(echo "$item" | jq -r '.line')
+              echo "::warning line=$line,title=Accessibility ($type)::$message"
+            done
+          else
+            echo "Aucun rapport généré."
+          fi
 
       - name: Upload report
         if: always()
