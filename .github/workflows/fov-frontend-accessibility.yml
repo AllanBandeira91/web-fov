@@ -38,7 +38,7 @@ jobs:
           include_screenshots: true
           file_best_practice_issues: false
           file_experimental_issues: false
-          dry_run: true
+          dry_run: false
           open_grouped_issues: true
           group_by: rule
           url_configs: '[{"url":"http://localhost:4200","waitForSelectors":["app-root .app-layout"]},{"url":"http://localhost:4200/login","waitForSelectors":["app-root"]},{"url":"http://localhost:4200/followed","waitForSelectors":["app-root .app-layout"]},{"url":"http://localhost:4200/discover","waitForSelectors":["app-root .app-layout"]},{"url":"http://localhost:4200/how-does-it-work","waitForSelectors":["app-root .app-layout"]}]'
