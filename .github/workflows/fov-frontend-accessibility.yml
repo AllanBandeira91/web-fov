@@ -1,66 +1,38 @@
 name: FOV Frontend Accessibility
 
-on:
-  push:
-  pull_request:
-    branches:
-      - dev
-      - master
+on:   workflow_dispatch
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+# on:
+#   push:
+#     branches:
+#       - main
 
 jobs:
-  accessibility:
+  accessibility_scanner:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        page:
-          - { name: "home", url: "https://fovapp.live" }
-          - { name: "login", url: "https://fovapp.live/login" }
-          - { name: "followed", url: "https://fovapp.live/followed" }
-          - { name: "discover", url: "https://fovapp.live/discover" }
-          - { name: "how-does-it-work", url: "https://fovapp.live/how-does-it-work" }
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
-
-      - name: be-a11y Accessibility Checker
-        id: a11y
-        continue-on-error: true
-        uses: be-lenka/be-a11y@v2.2.9
+      - uses: github/accessibility-scanner@v3
         with:
-          url: ${{ matrix.page.url }}
-          report: a11y-report-${{ matrix.page.name }}.json
+          urls: | # Provide a newline-delimited list of URLs to scan; more information below.
+            https://fovapp.live
+            https://fovapp.live/login
+            https://fovapp.live/followed
+            https://fovapp.live/discover
+            https://fovapp.live/how-does-it-work
+          repository: Flexible-Output-View/web-fov # Provide a repository name-with-owner (in the format "primer/primer-docs"). This is where issues will be filed and where Copilot will open PRs; more information below.
+          token: ${{ secrets.GH_TOKEN }} # This token must have write access to the repo above (contents, issues, and PRs); more information below. Note: GitHub Actions' GITHUB_TOKEN cannot be used here.
+          cache_key: cached_results-fovapp.json # Provide a filename that will be used when caching results. We recommend including the name or domain of the site being scanned.
+          skip_copilot_assignment: true # Optional: Set to true to skip assigning issues to GitHub Copilot (or if you don't have GitHub Copilot)
+          include_screenshots: true # Optional: Set to true to capture screenshots and include links to them in filed issues
+          open_grouped_issues: true # Optional: Set to true to open an issue grouping individual issues per violation
+          # group_by: finding # Optional: 'finding' (default, one issue per violation), 'rule' (one per rule), or 'rule+url' (one per rule per URL)
+          file_best_practice_issues: false # Optional: Set to false to stop filing new issues for best-practice findings (recommendations that are not hard WCAG failures)
+          file_experimental_issues: false # Optional: Set to false to stop filing new issues for experimental findings (checks that are not yet stable)
+          # dry_run: false # Optional: Set to true to scan and log what would be filed without creating/closing issues or writing the cache
+          # reduced_motion: no-preference # Optional: Playwright reduced motion configuration option
+          # color_scheme: light # Optional: Playwright color scheme configuration option
+          # ignore_https_errors: false # Optional: Set to true to ignore HTTPS errors when scanning URLs with self-signed certificates
+          # scans: '["axe","accesslint","reflow-scan"]' # Optional: An array of scans (or plugins) to be performed. Built-in engines are 'axe' and 'accesslint'; any other entry is a plugin name. If not provided, only Axe will be performed.
+          # url_configs: '[{"url":"https://example.com","excludeSelectors":["iframe","#widget"],"waitForSelectors":["#app","[data-ready]"]}]' # Optional: Per-URL config with CSS selectors to exclude from Axe or wait for before scanning. When provided, takes precedence over 'urls'.
 
-      - name: Parse and Print GitHub Notices
-        run: |
-          REPORT_FILE="a11y-report-${{ matrix.page.name }}.json"
-          echo "Extraction et classification des alertes pour [${{ matrix.page.name }}]..."
-
-          if [ -f "$REPORT_FILE" ]; then
-            jq -c '.[]' "$REPORT_FILE" | while read -r item; do
-              type=$(echo "$item" | jq -r '.type')
-              message=$(echo "$item" | jq -r '.message')
-              line=$(echo "$item" | jq -r '.line')
-
-              if [[ "$type" == "aria-role-invalid" || "$type" == "missing-landmark" ]]; then
-                LEVEL="error"   # S'affichera en ROUGE vif sur GitHub
-              else
-                LEVEL="warning" # S'affichera en JAUNE pour les alertes mineures
-              fi
-
-              echo "::$LEVEL line=$line,title=Accessibility (${{ matrix.page.name }} - $type)::$message"
-            done
-          else
-            echo "Aucun rapport généré pour ${{ matrix.page.name }}."
-          fi
-
-      - name: Upload report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: accessibility-report-${{ matrix.page.name }}
-          path: a11y-report-${{ matrix.page.name }}.json
