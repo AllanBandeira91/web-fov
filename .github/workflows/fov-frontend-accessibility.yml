@@ -11,7 +11,25 @@ jobs:
   accessibility_scanner:
     runs-on: ubuntu-latest
     steps:
-      - uses: github/accessibility-scanner@v3
+      - name: Setup Docker
+        uses: docker/setup-docker-action@v5.5.0
+
+      - name: Checkout FOV Web repository
+        uses: actions/checkout@v7
+        with:
+          path: web-fov
+          submodules: recursive
+
+      - name: Run FOV Web Stack
+        working-directory: web-fov
+        run: |
+          cp .env.example .env
+          mkdir -p media var/media hls
+          sudo chmod -R 777 .
+          docker compose up -d --build --wait
+
+      - name: Run Github Accessibility Scanner
+        uses: github/accessibility-scanner@v3
         with:
           repository: Flexible-Output-View/web-fov
           token: ${{ secrets.GH_TOKEN }}
@@ -23,4 +41,4 @@ jobs:
           dry_run: true
           open_grouped_issues: true
           group_by: rule
-          url_configs: '[{"url":"https://fovapp.live","waitForSelectors":["app-root .app-layout"]},{"url":"https://fovapp.live/login","waitForSelectors":["app-root"]},{"url":"https://fovapp.live/followed","waitForSelectors":["app-root .app-layout"]},{"url":"https://fovapp.live/discover","waitForSelectors":["app-root .app-layout"]},{"url":"https://fovapp.live/how-does-it-work","waitForSelectors":["app-root .app-layout"]}]'
+          url_configs: '[{"url":"http://localhost:4200","waitForSelectors":["app-root .app-layout"]},{"url":"http://localhost:4200/login","waitForSelectors":["app-root"]},{"url":"http://localhost:4200/followed","waitForSelectors":["app-root .app-layout"]},{"url":"http://localhost:4200/discover","waitForSelectors":["app-root .app-layout"]},{"url":"http://localhost:4200/how-does-it-work","waitForSelectors":["app-root .app-layout"]}]'
