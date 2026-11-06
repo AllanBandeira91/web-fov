@@ -13,25 +13,14 @@ jobs:
     steps:
       - uses: github/accessibility-scanner@v3
         with:
-          urls: | # Provide a newline-delimited list of URLs to scan; more information below.
-            https://fovapp.live
-            https://fovapp.live/login
-            https://fovapp.live/followed
-            https://fovapp.live/discover
-            https://fovapp.live/how-does-it-work
-          repository: Flexible-Output-View/web-fov # Provide a repository name-with-owner (in the format "primer/primer-docs"). This is where issues will be filed and where Copilot will open PRs; more information below.
-          token: ${{ secrets.GH_TOKEN }} # This token must have write access to the repo above (contents, issues, and PRs); more information below. Note: GitHub Actions' GITHUB_TOKEN cannot be used here.
-          cache_key: cached_results-fovapp.json # Provide a filename that will be used when caching results. We recommend including the name or domain of the site being scanned.
-          skip_copilot_assignment: true # Optional: Set to true to skip assigning issues to GitHub Copilot (or if you don't have GitHub Copilot)
-          include_screenshots: true # Optional: Set to true to capture screenshots and include links to them in filed issues
-          open_grouped_issues: true # Optional: Set to true to open an issue grouping individual issues per violation
-          # group_by: finding # Optional: 'finding' (default, one issue per violation), 'rule' (one per rule), or 'rule+url' (one per rule per URL)
-          file_best_practice_issues: false # Optional: Set to false to stop filing new issues for best-practice findings (recommendations that are not hard WCAG failures)
-          file_experimental_issues: false # Optional: Set to false to stop filing new issues for experimental findings (checks that are not yet stable)
-          # dry_run: false # Optional: Set to true to scan and log what would be filed without creating/closing issues or writing the cache
-          # reduced_motion: no-preference # Optional: Playwright reduced motion configuration option
-          # color_scheme: light # Optional: Playwright color scheme configuration option
-          # ignore_https_errors: false # Optional: Set to true to ignore HTTPS errors when scanning URLs with self-signed certificates
-          # scans: '["axe","accesslint","reflow-scan"]' # Optional: An array of scans (or plugins) to be performed. Built-in engines are 'axe' and 'accesslint'; any other entry is a plugin name. If not provided, only Axe will be performed.
-          # url_configs: '[{"url":"https://example.com","excludeSelectors":["iframe","#widget"],"waitForSelectors":["#app","[data-ready]"]}]' # Optional: Per-URL config with CSS selectors to exclude from Axe or wait for before scanning. When provided, takes precedence over 'urls'.
-
+          repository: Flexible-Output-View/web-fov
+          token: ${{ secrets.GH_TOKEN }}
+          cache_key: cached_results-fovapp.json
+          skip_copilot_assignment: true
+          include_screenshots: true
+          file_best_practice_issues: false
+          file_experimental_issues: false
+          dry_run: true
+          open_grouped_issues: true
+          group_by: rule
+          url_configs: '[{"url":"https://fovapp.live","waitForSelectors":["app-root .app-layout"]},{"url":"https://fovapp.live/login","waitForSelectors":["app-root"]},{"url":"https://fovapp.live/followed","waitForSelectors":["app-root .app-layout"]},{"url":"https://fovapp.live/discover","waitForSelectors":["app-root .app-layout"]},{"url":"https://fovapp.live/how-does-it-work","waitForSelectors":["app-root .app-layout"]}]'
